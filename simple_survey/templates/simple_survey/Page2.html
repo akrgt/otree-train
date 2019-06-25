@@ -1,0 +1,17 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block title %}
+    あなたの情報
+{% endblock %}
+
+{% block content %}
+あなたが入力した内容は以下のとおりです．<br>
+<p>
+　　　あなたの名前：{{ player.name }}<br>
+　　　あなたの年齢：{{ player.age }}<br>
+　　　あなたの性別：{{ player.sex }}<br>
+</p>
+
+    {% next_button %}
+{% endblock %}

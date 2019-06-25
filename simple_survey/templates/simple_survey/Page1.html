@@ -1,0 +1,16 @@
+{% extends "global/Page.html" %}
+{% load otree %}
+
+{% block title %}
+    あなたのことを教えてください．
+{% endblock %}
+
+{% block content %}
+
+    以下の情報を教えてください．
+
+    {% formfields %}
+
+    {% next_button %}
+
+{% endblock %}
