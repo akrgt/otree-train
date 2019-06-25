@@ -13,7 +13,7 @@ doc = """
 
 class Constants(BaseConstants):
     name_in_url = 'public_goods_trial'
-    players_per_group = 3
+    players_per_group = 4
     num_rounds = 1
 
     endowment = c(100)
