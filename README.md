@@ -26,4 +26,4 @@ github内には講義で実際に作るコードが入っています．
 
 明治大学情報コミュニケーション学部　後藤　晶
 
-akiragoto[atmark]meiji.ac.jp
+akrgt0713[a]gmail.com
