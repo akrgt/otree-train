@@ -57,5 +57,5 @@ class Player(BasePlayer):
     contribution = models.CurrencyField(
         choices=currency_range(c(0), c(Constants.endowment), c(1)),
         label="あなたはいくら貢献しますか？",
-        widget=widgets.Slider()
+        widget=widgets.IntegerWidget()
     )

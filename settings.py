@@ -20,13 +20,17 @@ from __future__ import annotations
 import os
 from os import environ
 from pathlib import Path
-
-import otree.settings
+import sys
 
 # ----------------------------------------------------------------------------
 # Base directory helpers
 # ----------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent
+
+# Ensure that oTree can discover apps located in the ./code directory.
+APPS_DIR = BASE_DIR / "code"
+if str(APPS_DIR) not in sys.path:
+    sys.path.insert(0, str(APPS_DIR))
 
 # ----------------------------------------------------------------------------
 # Core settings extensions
@@ -37,27 +41,16 @@ ALLOWED_HOSTS = environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
 # ----------------------------------------------------------------------------
 # Installed apps & middleware (prepend our additions)
-# ----------------------------------------------------------------------------
-INSTALLED_APPS = [
-    "whitenoise.runserver_nostatic",  # ensures runserver uses WhiteNoise
-] + otree.settings.INSTALLED_APPS
+# ---------------------------------------------------------------------------
 
-MIDDLEWARE = [
-    # Minify HTML responses **before** WhiteNoise adds ETags/compression
-    "htmlmin.middleware.HtmlMinifyMiddleware",
-    "htmlmin.middleware.MarkRequestMiddleware",
-    # WhiteNoise should come right after SecurityMiddleware (oTree already
-    # inserts it for us) so we mimic that order here.
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-] + otree.settings.MIDDLEWARE
-
-# Enable manifest-based hashed filenames + gzip & brotli compression
+# ---------------------------------------------------------------------------
+# Static files configuration
+# ---------------------------------------------------------------------------
+# Serve compressed & cache-busted assets via WhiteNoise.
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
 # Cache-control max-age for immutable static assets (~1 year)
 WHITENOISE_MAX_AGE = 31536000  # seconds
 
-# ---------------------------------------------------------------------------
 # Static files dirs & root (oTree calls collectstatic during deployment)
 # ---------------------------------------------------------------------------
 STATIC_URL = "/static/"
@@ -71,6 +64,64 @@ HTML_MINIFY = not DEBUG
 KEEP_COMMENTS_ON_MINIFY = False
 
 # ---------------------------------------------------------------------------
-# Import oTree default settings last so that our overrides stick.
+# Extensions: let oTree append these to its default INSTALLED_APPS.
 # ---------------------------------------------------------------------------
-otree.settings.update(globals())
+EXTENSION_APPS = ["whitenoise.runserver_nostatic"]
+
+# Additional middleware to prepend/append later via Django settings
+# We define it in a separate variable to avoid clobbering oTree's defaults.
+_EXTRA_MIDDLEWARE = [
+    "htmlmin.middleware.HtmlMinifyMiddleware",
+    "htmlmin.middleware.MarkRequestMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+]
+
+try:
+    # If the 'MIDDLEWARE' list is already defined by oTree after import,
+    # extend it. Otherwise, we leave it to oTree to merge later via
+    # Django's settings configuration.
+    MIDDLEWARE += _EXTRA_MIDDLEWARE  # type: ignore  # noqa: F821
+except NameError:
+    # MIDDLEWARE not yet defined; create it so that Django picks it up.
+    MIDDLEWARE = _EXTRA_MIDDLEWARE  # type: ignore  # noqa: F401
+
+# ---------------------------------------------------------------------------
+# Import oTree default settings last so that our overrides stick.
+# (Executed once at bottom after all local definitions.)
+# ---------------------------------------------------------------------------
+
+# ----------------------
+# oTree mandatory fields
+# ----------------------
+# Default session configs used by the oTree admin demo interface.
+SESSION_CONFIG_DEFAULTS = dict(
+    real_world_currency_per_point=1,
+    participation_fee=0,
+    doc="",
+)
+
+SESSION_CONFIGS = [
+    dict(
+        name="simple_survey",
+        display_name="Simple Survey",
+        num_demo_participants=1,
+        app_sequence=["simple_survey"],
+    ),
+    dict(
+        name="public_goods_trial",
+        display_name="Public Goods Trial",
+        num_demo_participants=4,
+        app_sequence=["public_goods_trial"],
+    ),
+]
+
+LANGUAGE_CODE = "ja"
+REAL_WORLD_CURRENCY_CODE = "JPY"
+USE_POINTS = True
+
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = environ.get("OTREE_ADMIN_PASSWORD", "password")
+
+# Note: oTree 5.x dynamically imports this module and does not require an
+# explicit `update()` call as in older versions. Therefore, we omit the call to
+# avoid circular-import issues.
